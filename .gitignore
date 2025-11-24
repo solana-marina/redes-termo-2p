@@ -1,1 +1,5 @@
 /__pycache__
+testes/teste_gui_local.py
+.gitignore
+testes/teste_cliente_terminal.py
+testes/teste.py

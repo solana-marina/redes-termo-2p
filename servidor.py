@@ -1,20 +1,35 @@
 import socket
 import threading
 import json
-import logica 
+import logica # Importa nossa lógica da Fase 1
 import string
 from collections import Counter
 
-HOST = '0.0.0.0'
+# --- Configurações do Servidor ---
+HOST = '0.0.0.0' # Escuta em todas as interfaces
 PORTA = 12345
 ARQUIVO_PALAVRAS = "palavras.txt"
 
+# --- Estado Global (Compartilhado entre Threads) ---
 clientes_conectados = {}
 fila_de_espera = []
 fila_lock = threading.Lock()
 jogos_ativos = []
 
+def obter_ip_local():
+    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    try:
+        s.connect(('8.8.8.8', 80))
+        ip = s.getsockname()[0]
+    except Exception:
+        ip = '127.0.0.1'
+    finally:
+        s.close()
+    return ip
+
+# --- Funções Auxiliares de Rede ---
 def enviar_mensagem(cliente_socket, tipo, payload):
+    """Envia uma mensagem JSON formatada para um cliente."""
     try:
         mensagem = json.dumps({"tipo": tipo, "payload": payload}) + '\n'
         cliente_socket.sendall(mensagem.encode('utf-8'))
@@ -22,10 +37,12 @@ def enviar_mensagem(cliente_socket, tipo, payload):
         print(f"[Erro Rede] Erro ao enviar para {cliente_socket.getpeername()}: {e}")
 
 def broadcast_para_jogo(jogo_obj, tipo, payload, excluir_socket=None):
+    """Envia uma mensagem para AMBOS os jogadores de um jogo."""
     for jogador_info in jogo_obj.jogador_turnos.values():
         if jogador_info["socket"] != excluir_socket:
             enviar_mensagem(jogador_info["socket"], tipo, payload)
 
+# --- Gerenciamento de Jogo ---
 class Jogo:
     def __init__(self, jogador1_info, jogador2_info, todas_palavras):
         self.palavra_secreta = logica.escolher_palavra_secreta(todas_palavras)
@@ -39,7 +56,7 @@ class Jogo:
         }
         self.jogador_turnos[1]["numero"] = 1
         self.jogador_turnos[2]["numero"] = 2
-        self.turno_atual = 1
+        self.turno_atual = 1 
         self.vencedor = None
         self.jogo_ativo = True
         
@@ -59,7 +76,6 @@ class Jogo:
             "max_tentativas": self.max_tentativas 
         }
 
-        # Payload para Jogador 1
         payload_j1 = payload_base.copy()
         payload_j1.update({
             "oponente": self.jogador_turnos[2]["username"],
@@ -67,7 +83,6 @@ class Jogo:
         })
         enviar_mensagem(self.jogador_turnos[1]["socket"], "S_GAME_START", payload_j1)
         
-        # Payload para Jogador 2
         payload_j2 = payload_base.copy()
         payload_j2.update({
             "oponente": self.jogador_turnos[1]["username"],
@@ -92,7 +107,6 @@ class Jogo:
         
         estado_teclado = logica.calcular_estado_teclado(self.tentativas_feitas, self.palavra_secreta)
 
-        # Verificar vitória
         if tentativa_normalizada == self.palavra_secreta:
             self.vencedor = self.turno_atual
             self.jogo_ativo = False
@@ -118,7 +132,6 @@ class Jogo:
             self.encerrar_jogo()
             return
 
-        # Se o jogo continua, troca o turno
         self.turno_atual = 2 if self.turno_atual == 1 else 1
         
         payload_update = {
@@ -131,7 +144,6 @@ class Jogo:
         broadcast_para_jogo(self, "S_GAME_UPDATE", payload_update)
 
     def enviar_atualizacao_turno(self):
-        """Envia um lembrete de quem é a vez."""
         payload_turno = {
             "proximo_turno_num": self.turno_atual,
             "proximo_turno_username": self.jogador_turnos[self.turno_atual]["username"]
@@ -158,7 +170,7 @@ class Jogo:
         print("[Jogo] Jogo encerrado e limpo.")
 
 
-#Gerenciamento de Clientes (Thread Principal)
+# --- Gerenciamento de Clientes (Thread Principal) ---
 def procurar_jogo(cliente_socket, username):
     global fila_de_espera
     
@@ -250,6 +262,7 @@ def handle_client(cliente_socket):
         cliente_socket.close()
 
 
+# --- Ponto de Entrada do Servidor ---
 def main():
     palavras = logica.carregar_palavras(ARQUIVO_PALAVRAS)
     if not palavras:
@@ -257,10 +270,19 @@ def main():
         return
     print(f"[Info] {len(palavras)} palavras (normalizadas) carregadas com sucesso.")
 
+    # --- Auto-IP Logic ---
+    ip_local = obter_ip_local()
+    
     servidor_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     servidor_socket.bind((HOST, PORTA))
     servidor_socket.listen()
-    print(f"[Servidor] Servidor 'Termo Competitivo' iniciado em {HOST}:{PORTA}")
+    
+    print("\n" + "="*50)
+    print(f"[Servidor] ONLINE em {HOST}:{PORTA}")
+    print(f"[IMPORTANTE] Para jogar na rede local, use este IP no cliente:")
+    print(f"             >>>  {ip_local}  <<<")
+    print("="*50 + "\n")
+    
     print("[Servidor] Aguardando conexões...")
 
     try:

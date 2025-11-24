@@ -3,21 +3,23 @@ import sys
 import string
 import queue
 import time
-from rede_cliente import NetworkThread
+from rede_cliente import NetworkThread 
 
-MAX_TENTATIVAS_PADRAO = 6
+#  Configurações Padrão 
+MAX_TENTATIVAS_PADRAO = 6 
 HOST_PADRAO = '127.0.0.1' 
 PORTA_PADRAO = 12345
 
-COR_BRANCO = (230, 230, 230)
+COR_BRANCO = (255, 255, 255)     
 COR_PRETO = (18, 18, 18)
 COR_FUNDO = (18, 18, 18)
 COR_CINZA = (58, 58, 60)
-COR_BORDA = (80, 80, 80)
+COR_BORDA = (100, 100, 100)      
 COR_VERDE = (106, 170, 100)
 COR_AMARELO = (201, 180, 88)
 COR_NEUTRO_TECLADO = (129, 131, 132)
 
+# Mapeamento de cores
 MAPA_CORES_GUI = {
     'verde': COR_VERDE,
     'amarelo': COR_AMARELO,
@@ -25,13 +27,11 @@ MAPA_CORES_GUI = {
     'neutro': COR_NEUTRO_TECLADO
 }
 
-# Funções de Cálculo de Layout 
+#  Funções de Cálculo de Layout 
 
 def calcular_dimensoes(largura_janela, altura_janela, tamanho_palavra, max_tentativas):
-
     dims = {}
 
-    #1. Calcular o Tamanho de Célula
     largura_util = largura_janela * 0.95
     unidades_largura_teclado = 10 * 0.75 + 9 * 0.1
     unidades_largura_grid = tamanho_palavra * 1.1 
@@ -50,13 +50,12 @@ def calcular_dimensoes(largura_janela, altura_janela, tamanho_palavra, max_tenta
     dims['key_margin'] = dims['cell_size'] * 0.1
     dims['key_w_special'] = dims['key_w'] * 1.5
 
-    # 3. Calcular Tamanhos de Fonte 
+    #  (AJUSTE) Fontes Maiores 
     dims['font_grid_size'] = int(dims['cell_size'] * 0.7)
     dims['font_key_size'] = int(dims['key_h'] * 0.35)
-    dims['font_notify_size'] = int(dims['key_h'] * 0.4)
-    dims['font_button_size'] = int(dims['key_h'] * 0.38)
+    dims['font_notify_size'] = int(dims['key_h'] * 0.55) # Aumentado para 55%
+    dims['font_button_size'] = int(dims['key_h'] * 0.45) # Aumentado para 45%
     
-    # 4. Calcular Alturas Totais dos Componentes 
     dims['header_h'] = dims['font_notify_size'] * 2.5
     dims['grid_total_h'] = (max_tentativas * (dims['cell_size'] + dims['cell_margin'])) + dims['cell_margin']
     dims['notify_area_h'] = dims['key_h'] * 1.8
@@ -69,12 +68,11 @@ def calcular_dimensoes(largura_janela, altura_janela, tamanho_palavra, max_tenta
     return dims
 
 def carregar_fontes(dims):
-    """Carrega (ou recarrega) todas as fontes com os novos tamanhos."""
     fontes = {}
     try:
         fontes['grid'] = pygame.font.SysFont('Arial', dims['font_grid_size'], bold=True)
         fontes['teclado'] = pygame.font.SysFont('Arial', dims['font_key_size'], bold=True)
-        fontes['notificacao'] = pygame.font.SysFont('Arial', dims['font_notify_size'])
+        fontes['notificacao'] = pygame.font.SysFont('Arial', dims['font_notify_size'], bold=True) 
         fontes['botao'] = pygame.font.SysFont('Arial', dims['font_button_size'], bold=True)
     except:
         fontes['grid'] = pygame.font.Font(None, dims['font_grid_size'])
@@ -83,7 +81,7 @@ def carregar_fontes(dims):
         fontes['botao'] = pygame.font.Font(None, dims['font_button_size'])
     return fontes
 
-# Funções de Desenho
+#  Funções de Desenho 
 
 def desenhar_texto(surface, texto, pos, fonte, cor):
     try:
@@ -222,7 +220,7 @@ def desenhar_tela_login(surface, username_digitado, caixa_ativa, dims, fontes):
     
     desenhar_texto(surface, username_digitado, rect_caixa.center, fontes['notificacao'], COR_BRANCO)
     desenhar_texto(surface, "Pressione ENTER para conectar", (LARGURA_JANELA / 2, y_caixa + altura_caixa + 40),
-                   fontes['teclado'], COR_BORDA)
+                   fontes['teclado'], COR_BRANCO)
                    
     return rect_caixa
 
@@ -234,12 +232,18 @@ def desenhar_tela_espera(surface, fontes):
                    fontes['notificacao'], COR_BRANCO)
 
 
-#Loop Principal do Jogo (Cliente)
+#  Loop Principal do Jogo (Cliente) 
 def main_pygame():
+    
+    print(f"\n Configuração de Rede ")
+    print(f"IP Padrão (Local): {HOST_PADRAO}")
+    ip_input = input("Digite o IP do servidor (ou ENTER para usar o padrão): ").strip()
+    HOST_SERVIDOR = ip_input if ip_input else HOST_PADRAO
+    print(f"Conectando em: {HOST_SERVIDOR}\n")
+
     pygame.init()
     pygame.font.init()
     
-    # 2. Definir Tamanho Fixo da Janela (60% do monitor)
     info = pygame.display.Info()
     MONITOR_LARGURA = info.current_w
     MONITOR_ALTURA = info.current_h
@@ -250,6 +254,7 @@ def main_pygame():
     pygame.display.set_caption("Termo Competitivo")
     clock = pygame.time.Clock()
 
+    # Variáveis de Estado Globais do Cliente 
     game_state = "LOGIN" 
     network_thread = None
     fila_rede = queue.Queue()
@@ -258,6 +263,7 @@ def main_pygame():
     input_box_rect = None
     input_box_active = True
     
+    #  Variáveis de Jogo Dinâmicas 
     tamanho_palavra = 5 
     max_tentativas = MAX_TENTATIVAS_PADRAO 
     
@@ -272,22 +278,21 @@ def main_pygame():
     teclado_rects = {} 
     rect_botao_jogar_novamente = None 
 
-    # 3. Calcular Dimensões e Fontes Iniciais (para tela de login)
+    # Calcular Dimensões e Fontes (UMA VEZ)
     dims = calcular_dimensoes(JANELA_LARGURA, JANELA_ALTURA, 5, MAX_TENTATIVAS_PADRAO) 
     fontes = carregar_fontes(dims)
 
-    # Loop Principal do Aplicativo
+    #Loop Principal do Aplicativo
     rodando_app = True
     while rodando_app:
         
-        # 6. Manipulação de Eventos (Comum a todos os estados)
         mouse_pos = pygame.mouse.get_pos()
         
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 rodando_app = False 
 
-            # A. Eventos de MOUSE
+            #  Eventos de MOUSE 
             if event.type == pygame.MOUSEBUTTONDOWN:
                 if event.button == 1: 
                     
@@ -326,10 +331,10 @@ def main_pygame():
                             mensagem_notificacao = ""
                             meu_turno = False
                             if network_thread: network_thread.stop()
-                            network_thread = NetworkThread(HOST_PADRAO, PORTA_PADRAO, fila_rede, username_digitado)
+                            network_thread = NetworkThread(HOST_SERVIDOR, PORTA_PADRAO, fila_rede, username_digitado)
                             network_thread.start()
 
-            #B. Eventos de Teclado Físico
+            # Eventos de Teclado Físico 
             if event.type == pygame.KEYDOWN:
                 
                 if game_state == "LOGIN":
@@ -339,7 +344,7 @@ def main_pygame():
                         elif event.key == pygame.K_RETURN:
                             if username_digitado:
                                 game_state = "WAITING"
-                                network_thread = NetworkThread(HOST_PADRAO, PORTA_PADRAO, fila_rede, username_digitado)
+                                network_thread = NetworkThread(HOST_SERVIDOR, PORTA_PADRAO, fila_rede, username_digitado)
                                 network_thread.start()
                         elif event.unicode:
                             username_digitado += event.unicode
@@ -364,7 +369,7 @@ def main_pygame():
                                 tentativa_atual += letra_bruta
                                 mensagem_notificacao = ""
         
-        #7. Processamento da Fila de Rede
+        # Processamento da Fila de Rede 
         try:
             while not fila_rede.empty():
                 msg = fila_rede.get_nowait()
@@ -425,7 +430,6 @@ def main_pygame():
                         network_thread.stop()
                         network_thread = None
 
-                #Trata a desconexão do oponente ---
                 elif tipo == "S_ERROR":
                     mensagem = payload.get("mensagem", "Erro desconhecido")
                     mensagem_notificacao = mensagem
@@ -438,7 +442,7 @@ def main_pygame():
                 
                 elif tipo == "S_ERROR_FATAL":
                     mensagem_notificacao = payload.get("mensagem", "Erro fatal de rede")
-                    game_state = "LOGIN"
+                    game_state = "LOGIN" 
                     if network_thread:
                         network_thread.stop()
                         network_thread = None
@@ -446,7 +450,7 @@ def main_pygame():
         except queue.Empty:
             pass
             
-        #8. Renderização
+        # Renderização (Desenho) 
         screen.fill(COR_FUNDO)
         
         y_cursor = 0 
@@ -457,35 +461,29 @@ def main_pygame():
             input_box_rect = desenhar_tela_login(screen, username_digitado, input_box_active, dims, fontes)
             
         elif game_state == "WAITING":
-            # Recalcula dims/fontes para a tela de espera
             if tamanho_palavra != 5 or max_tentativas != MAX_TENTATIVAS_PADRAO:
                  dims = calcular_dimensoes(JANELA_LARGURA, JANELA_ALTURA, 5, MAX_TENTATIVAS_PADRAO) 
                  fontes = carregar_fontes(dims)
             desenhar_tela_espera(screen, fontes)
             
         elif game_state == "PLAYING" or game_state == "GAME_OVER":
-            # 1. Desenha o Título
             y_centro_header = dims['header_h'] / 2
             desenhar_texto(screen, titulo_header, 
                            (JANELA_LARGURA / 2, y_centro_header), 
                            fontes['notificacao'], COR_BRANCO)
             y_cursor += dims['header_h']
             
-            # 2. Desenha o Grid (passando max_tentativas)
             desenhar_grid(screen, y_cursor, tentativas_feitas, tentativa_atual, linha_atual, tamanho_palavra, max_tentativas, dims, fontes)
             y_cursor += dims['grid_total_h']
             
-            # 3. Define o Y para a ÁREA de notificação/botão
             y_area_notificacao_centro = y_cursor + (dims['notify_area_h'] / 2)
             y_cursor += dims['notify_area_h']
             
-            # 4. Desenha o Teclado
             teclado_rects = desenhar_teclado(screen, y_cursor, estado_teclado, dims, fontes)
             
-            # 5. Desenha Notificação OU Botão
             if game_state == "PLAYING":
                 desenhar_notificacao(screen, mensagem_notificacao, y_area_notificacao_centro, fontes)
-            else: # GAME_OVER
+            else: 
                 y_pos_msg = y_area_notificacao_centro - (dims['notify_area_h'] * 0.25)
                 y_pos_btn = y_area_notificacao_centro + (dims['notify_area_h'] * 0.25)
                 
