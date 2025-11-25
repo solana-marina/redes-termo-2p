@@ -9,6 +9,14 @@
 </p>
 
 ---
+## Requerimentos
+* Python 3
+* Pygame
+```
+pip install pygame
+```
+* Permissão do Python no Firewall
+
 
 ## Projeto: Termo Competitivo
 
