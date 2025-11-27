@@ -1,16 +1,16 @@
 import socket
 import threading
 import json
-import logica # Importa nossa lógica da Fase 1
+import logica
 import string
 from collections import Counter
 
-# --- Configurações do Servidor ---
+# Configurações do Servidor
 HOST = '0.0.0.0' # Escuta em todas as interfaces
 PORTA = 12345
 ARQUIVO_PALAVRAS = "palavras.txt"
 
-# --- Estado Global (Compartilhado entre Threads) ---
+# Estado Global (Compartilhado entre Threads)
 clientes_conectados = {}
 fila_de_espera = []
 fila_lock = threading.Lock()
@@ -27,9 +27,8 @@ def obter_ip_local():
         s.close()
     return ip
 
-# --- Funções Auxiliares de Rede ---
+# Funções Auxiliares de Rede
 def enviar_mensagem(cliente_socket, tipo, payload):
-    """Envia uma mensagem JSON formatada para um cliente."""
     try:
         mensagem = json.dumps({"tipo": tipo, "payload": payload}) + '\n'
         cliente_socket.sendall(mensagem.encode('utf-8'))
@@ -37,12 +36,11 @@ def enviar_mensagem(cliente_socket, tipo, payload):
         print(f"[Erro Rede] Erro ao enviar para {cliente_socket.getpeername()}: {e}")
 
 def broadcast_para_jogo(jogo_obj, tipo, payload, excluir_socket=None):
-    """Envia uma mensagem para AMBOS os jogadores de um jogo."""
     for jogador_info in jogo_obj.jogador_turnos.values():
         if jogador_info["socket"] != excluir_socket:
             enviar_mensagem(jogador_info["socket"], tipo, payload)
 
-# --- Gerenciamento de Jogo ---
+# Gerenciamento de Jogo
 class Jogo:
     def __init__(self, jogador1_info, jogador2_info, todas_palavras):
         self.palavra_secreta = logica.escolher_palavra_secreta(todas_palavras)
@@ -170,7 +168,7 @@ class Jogo:
         print("[Jogo] Jogo encerrado e limpo.")
 
 
-# --- Gerenciamento de Clientes (Thread Principal) ---
+# Gerenciamento de Clientes (Thread Principal)
 def procurar_jogo(cliente_socket, username):
     global fila_de_espera
     
@@ -262,7 +260,7 @@ def handle_client(cliente_socket):
         cliente_socket.close()
 
 
-# --- Ponto de Entrada do Servidor ---
+# Ponto de Entrada do Servidor
 def main():
     palavras = logica.carregar_palavras(ARQUIVO_PALAVRAS)
     if not palavras:
@@ -270,7 +268,7 @@ def main():
         return
     print(f"[Info] {len(palavras)} palavras (normalizadas) carregadas com sucesso.")
 
-    # --- Auto-IP Logic ---
+    # Auto-IP Logic
     ip_local = obter_ip_local()
     
     servidor_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)

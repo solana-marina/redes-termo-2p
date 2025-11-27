@@ -7,7 +7,7 @@ def normalizar(texto: str) -> str:
     texto = texto.lower()
     # Decompõe (ex: 'ç' -> 'c' + '̧')
     nfkd = unicodedata.normalize('NFKD', texto)
-    # Codifica para ASCII, ignorando os acentos (bytes)
+    # Codifica para ASCII, ignorando os acentos
     ascii_bytes = nfkd.encode('ascii', 'ignore')
     # Decodifica de volta para string
     return ascii_bytes.decode('utf-8')

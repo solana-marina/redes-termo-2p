@@ -9,14 +9,6 @@
 </p>
 
 ---
-## Requerimentos
-* Python 3
-* Pygame
-```
-pip install pygame
-```
-* Permissão do Python no Firewall
-
 
 ## Projeto: Termo Competitivo
 
@@ -51,7 +43,7 @@ Para este jogo, o TCP foi escolhido em detrimento do UDP por três motivos cruci
 
 A aplicação é dividida em dois componentes principais que se comunicam pela rede.
 
-##### 1.3.1. O Servidor
+##### Servidor
 
 O servidor é o "cérebro" do jogo. Ele não possui interface gráfica e sua única responsabilidade é gerenciar o estado dos jogos.
 
@@ -68,7 +60,7 @@ O servidor é o "cérebro" do jogo. Ele não possui interface gráfica e sua ún
 
 * **Lógica:** Quando o servidor recebe uma tentativa (C_GUESS), ele a normaliza (ex: "MAÇÃ" -> "maca"), processa usando `logica.py`, recalcula o estado do teclado (`logica.calcular_estado_teclado`), e envia o resultado (S_GAME_UPDATE) para ambos os jogadores na sala.
 
-##### 1.3.2. O Cliente
+##### Cliente
 
 O cliente é a interface visual com a qual o jogador interage. Ele é intencionalmente "burro" (stateless), ou seja, não contém lógica de jogo e apenas desenha o que o servidor lhe envia.
 
@@ -93,12 +85,14 @@ O cliente é a interface visual com a qual o jogador interage. Ele é intenciona
 * Python 3.x
 * Acesso ao arquivo `palavras.txt`.
 * Conexão de rede estável com uma porta (ex: 12345) aberta e acessível aos clientes.
+* Permissão do firewall
 
 **Cliente:**
 
 * Python 3.x
 * Biblioteca Pygame: `pip install pygame`
 * Conexão de rede com o servidor.
+* Permissão do firewall
 
 ---
 
@@ -297,3 +291,9 @@ ou
 ```json
 {"mensagem": "Não foi possível conectar ao servidor."}
 ```
+
+#### 2.4. Diagrama de Sequência (Fluxo de Mensagens)
+
+O diagrama abaixo ilustra a troca de mensagens desde a conexão até o fim do jogo.
+
+![Diagrama de Sequência](diagrama.png)

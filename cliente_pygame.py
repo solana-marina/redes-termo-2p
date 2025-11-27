@@ -53,8 +53,8 @@ def calcular_dimensoes(largura_janela, altura_janela, tamanho_palavra, max_tenta
     #  (AJUSTE) Fontes Maiores 
     dims['font_grid_size'] = int(dims['cell_size'] * 0.7)
     dims['font_key_size'] = int(dims['key_h'] * 0.35)
-    dims['font_notify_size'] = int(dims['key_h'] * 0.55) # Aumentado para 55%
-    dims['font_button_size'] = int(dims['key_h'] * 0.45) # Aumentado para 45%
+    dims['font_notify_size'] = int(dims['key_h'] * 0.55) 
+    dims['font_button_size'] = int(dims['key_h'] * 0.45) 
     
     dims['header_h'] = dims['font_notify_size'] * 2.5
     dims['grid_total_h'] = (max_tentativas * (dims['cell_size'] + dims['cell_margin'])) + dims['cell_margin']
